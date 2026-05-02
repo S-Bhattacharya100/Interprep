@@ -1,30 +1,79 @@
-const runCode = async ({testCases, code, language}) => {
-    // Note: In a real implementation, this would execute the code
-    // and capture its output for comparison with test cases
-    // For now, we'll do a simple validation
-    
-    if (!testCases || testCases.length === 0) {
-        return {
-            status: "Accepted",
-            output: "No test cases to validate"
-        };
-    }
+const { spawn } = require("child_process");
+const fs = require("fs");
+const path = require("path");
 
-    let allPassed = true;
+const runCode = async ({ code, testCases }) => {
+    const filePath = path.join(__dirname, `temp-${Date.now()}.js`);
+    fs.writeFileSync(filePath, code);
 
-    for(let test of testCases) {
-        if(!test.output) {
-            allPassed = false;
-            break;
+    for (let test of testCases) {
+        const result = await new Promise((resolve) => {
+
+            const process = spawn("node", [filePath]);
+
+            let output = "";
+            let error = "";
+
+            // Capture stdout
+            process.stdout.on("data", (data) => {
+                output += data.toString();
+            });
+
+            // Capture stderr
+            process.stderr.on("data", (data) => {
+                error += data.toString();
+            });
+
+            // Send input to stdin
+            process.stdin.write(test.input);
+            process.stdin.end();
+
+            // Timeout protection
+            const timeout = setTimeout(() => {
+                process.kill();
+                resolve({
+                    status: "Time Limit Exceeded",
+                    error: "Execution timed out"
+                });
+            }, 2000);
+
+            process.on("close", () => {
+                clearTimeout(timeout);
+
+                if (error) {
+                    return resolve({
+                        status: "Runtime Error",
+                        error
+                    });
+                }
+
+                resolve({
+                    output: output.trim()
+                });
+            });
+        });
+
+        // Handle runtime error
+        if (result.status === "Runtime Error" || result.status === "Time Limit Exceeded") {
+            fs.unlinkSync(filePath);
+            return result;
         }
-        // In production: Execute code with test.input and compare output
-        // For now: Just validate structure
+
+        // Compare output
+        if (result.output !== test.output.trim()) {
+            fs.unlinkSync(filePath);
+            return {
+                status: "Wrong Answer",
+                output: result.output
+            };
+        }
     }
+
+    fs.unlinkSync(filePath);
 
     return {
-        status: allPassed ? "Accepted" : "Wrong Answer",
-        output: "Test execution completed"
-    }
+        status: "Accepted"
+    };
 };
 
-module.exports = { runCode }
+module.exports = { runCode };
