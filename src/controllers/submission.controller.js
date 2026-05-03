@@ -29,8 +29,8 @@ const createSubmission = asyncHandler(async (req, res) => {
 
     // Run evaluation
     const result = await runner.runCode({
-        testCases: problem.testCases,
         code,
+        testCases: problem.testCases,
         language
     });
 

@@ -22,8 +22,12 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - Interview problem management (DSA, HR, System Design)
 - Problem filtering by difficulty and category
 - Pagination support for problems
-- Code submission and evaluation
-- Multi-language support (Java, JavaScript, Python, C++)
+- Real code execution engine with stdin/stdout handling
+- Multi-test case evaluation per submission
+- Execution timeout protection (2 seconds per test)
+- Automatic code cleanup after execution
+- Comprehensive error capture (runtime errors, timeouts)
+- Multi-language support (JavaScript native, Java/Python/C++ ready)
 
 ## Tech Stack
 
@@ -239,7 +243,7 @@ server/
     ├── services/
     │   ├── token.service.js       # JWT token generation
     │   ├── email.service.js       # Email service (verification & password reset)
-    │   └── runner.service.js      # Code execution and evaluation service
+    │   └── runner.service.js      # Real code execution engine with child_process
     └── utils/
         ├── token.utils.js         # Utility token generation (verification & reset)
         ├── apiError.js            # Custom error class
@@ -282,17 +286,78 @@ server/
 
 1. User submits code via `/api/submissions` endpoint with problem ID, code, and language
 2. Submission created in database with "Pending" status
-3. Code passed to `runner.service.js` for evaluation
-4. Test cases from problem are used for validation
-5. Code execution result (status, output, error) stored in submission
-6. User can view submission with evaluation results
-7. Status updated to "Accepted", "Wrong Answer", "Runtime Error", or "Time Limit Exceeded"
+3. Code passed to `runner.service.js` for real execution
+4. Code written to temporary file in the system
+5. Child process spawned to execute the code (Node.js for JavaScript)
+6. Test case inputs passed via stdin to the running process
+7. stdout and stderr captured for each test case execution
+8. Execution timeout set to 2 seconds per test case
+9. Test outputs compared with expected outputs
+10. Submission status updated to "Accepted", "Wrong Answer", "Runtime Error", or "Time Limit Exceeded"
+11. Temporary files cleaned up after execution
+12. Results stored in submission document
 
-**Supported Languages:**
-- Java
-- JavaScript
-- Python
-- C++
+**Execution Engine Details:**
+- **Mechanism**: Child process with stdin/stdout/stderr streams
+- **Timeout**: 2 seconds per test case
+- **Temporary Files**: Cleaned up automatically after execution
+- **Input Method**: stdin-based input for each test case
+- **Error Handling**: Captures runtime errors and timeout conditions
+- **Supported Languages**: JavaScript (Node.js execution)
+  - Java, Python, C++ support can be added by configuring appropriate runtimes
+
+**Status Descriptions:**
+- **Pending**: Submission received, awaiting execution
+- **Accepted**: Code passed all test cases
+- **Wrong Answer**: Code executed but produced incorrect output
+- **Runtime Error**: Code crashed during execution (stderr captured)
+- **Time Limit Exceeded**: Code execution exceeded 2-second timeout
+
+## Code Execution Architecture
+
+### Runner Service Implementation
+
+The `runner.service.js` implements a real code execution engine using Node.js child processes:
+
+```javascript
+// Key Features:
+- spawn() for process execution
+- File system for temporary code storage
+- stdin/stdout/stderr stream handling
+- Timeout protection (2 seconds per test)
+- Automatic cleanup of temporary files
+```
+
+### Process Flow
+
+1. **Code Submission**
+   - User submits code in target language
+   - Submission created with metadata (user, problem, code, language)
+
+2. **Execution Setup**
+   - Code written to temporary file
+   - Temporary file path: `temp-${timestamp}.js`
+   - File permissions set appropriately
+
+3. **Test Case Execution** (per test case)
+   - Child process spawned with code file
+   - Test input sent via stdin
+   - Process monitors stdout for output
+   - stderr captured for error messages
+   - Execution timeout: 2000ms (2 seconds)
+
+4. **Result Processing**
+   - Output compared with expected output (trimmed)
+   - Status determined: Accepted/Wrong Answer/Runtime Error/Timeout
+   - Temporary file deleted after all tests complete
+   - Results persisted to database
+
+### Error Handling
+
+- **Runtime Errors**: Captured from stderr, stored in submission
+- **Timeout**: Process killed after 2 seconds, status set to "Time Limit Exceeded"
+- **Exit Codes**: Monitored for abnormal termination
+- **Stream Errors**: Handled gracefully with process cleanup
 
 ## Data Models
 
@@ -331,10 +396,16 @@ server/
 - **code**: String (required) - Source code submitted by user
 - **language**: String (enum: "java", "javascript", "python", "cpp", required)
 - **status**: String (enum: "Pending", "Accepted", "Wrong Answer", "Runtime Error", "Time Limit Exceeded", default: "Pending")
-- **output**: String - Program output from execution
-- **error**: String - Error message if execution failed
+- **output**: String - Actual program output from execution (for wrong answers)
+- **error**: String - Error message if execution failed (runtime errors)
 - **executionTime**: Number - Execution time in milliseconds
 - **timestamps**: Auto-generated createdAt and updatedAt
+
+**Execution Details:**
+- Outputs and errors are captured from actual process execution
+- Up to 2 seconds allowed per test case
+- Temporary files created during execution are cleaned up automatically
+- Results immutable once stored (for audit trail)
 
 **Status Descriptions:**
 - **Pending**: Submission received, awaiting execution
@@ -355,6 +426,8 @@ server/
 - **nodemailer**: Email service for verification and password reset emails
 - **morgan**: HTTP request logging middleware
 - **crypto**: Secure token generation (built-in Node.js)
+- **child_process**: Code execution engine (built-in Node.js)
+- **fs**: File system operations for temporary code storage (built-in Node.js)
 
 ## Development Dependencies
 

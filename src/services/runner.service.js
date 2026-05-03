@@ -2,7 +2,7 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
-const runCode = async ({ code, testCases }) => {
+const runCode = async ({ code, testCases, language }) => {
     const filePath = path.join(__dirname, `temp-${Date.now()}.js`);
     fs.writeFileSync(filePath, code);
 
