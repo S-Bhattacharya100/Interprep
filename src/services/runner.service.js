@@ -37,7 +37,7 @@ const runCode = async ({ code, testCases, language }) => {
     const fileName = `temp-${Date.now()}`;
     let filePath;
 
-    // 🔹 Assign extension
+    // Assign extension
     if (language === "javascript") filePath = path.join(__dirname, `${fileName}.js`);
     if (language === "python") filePath = path.join(__dirname, `${fileName}.py`);
     if (language === "java") filePath = path.join(__dirname, `Main.java`);
@@ -46,7 +46,7 @@ const runCode = async ({ code, testCases, language }) => {
 
     const execDetails = getExecutionDetails(language, filePath);
 
-    // 🔴 Step 1: Compile (Java only)
+    // Compile (Java only)
     if (language === "java") {
         const compileResult = await new Promise((resolve) => {
             const compile = spawn(execDetails.compile.command, execDetails.compile.args);
@@ -74,7 +74,7 @@ const runCode = async ({ code, testCases, language }) => {
         }
     }
 
-    // 🔥 Step 2: Run for each test case
+    // Run for each test case
     for (let test of testCases) {
         const result = await new Promise((resolve) => {
 

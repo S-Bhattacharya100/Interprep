@@ -497,6 +497,98 @@ Each log entry includes:
    tail -f logs/combined.log
    ```
 
+## Code Submission Examples
+
+### Required Runtime Environments
+
+Before users can submit code, the following runtimes must be installed on the server:
+
+- **JavaScript**: Node.js (v14 or higher)
+- **Python**: Python 3.6 or higher
+- **Java**: Java Development Kit (JDK) 11 or higher
+
+### Sample Submission JSON - JavaScript
+
+```json
+{
+  "problem": "69f8b3a29d1538167eedcd6c",
+  "code": "const readline = require('readline');\n\nconst rl = readline.createInterface({\n  input: process.stdin,\n  output: process.stdout\n});\n\nrl.on('line', (input) => {\n  const [a, b] = input.split(' ').map(Number);\n  console.log(a + b);\n  rl.close();\n});",
+  "language": "javascript"
+}
+```
+
+**Expected Output:**
+```json
+{
+  "success": true,
+  "data": {
+    "user": "69f8b29d9d1538167eedcd61",
+    "problem": "69f8b3a29d1538167eedcd6c",
+    "code": "...",
+    "language": "javascript",
+    "status": "Accepted",
+    "_id": "69fc2dd84202dc00d084c7ba",
+    "createdAt": "2026-05-07T06:14:48.933Z",
+    "updatedAt": "2026-05-07T06:14:49.093Z"
+  }
+}
+```
+
+### Sample Submission JSON - Python
+
+```json
+{
+  "problem": "69f8b3a29d1538167eedcd6c",
+  "code": "a, b = map(int, input().split())\nprint(a + b)",
+  "language": "python"
+}
+```
+
+### Sample Submission JSON - Java
+
+```json
+{
+  "problem": "69f8b3a29d1538167eedcd6c",
+  "code": "import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int a = sc.nextInt();\n    int b = sc.nextInt();\n    System.out.println(a + b);\n  }\n}",
+  "language": "java"
+}
+```
+
+## Security and Sandbox Limitations
+
+⚠️ **CRITICAL SECURITY WARNING** ⚠️
+
+**The current implementation executes user code directly without sandboxing.** This is **UNSAFE FOR PRODUCTION** and poses significant security risks:
+
+### Current Risks:
+- User code has access to the file system (read/write)
+- Code can access environment variables
+- Code can make network requests
+- Malicious code can consume system resources (CPU, memory)
+- Code runs with the same privileges as the Node.js process
+- No resource limits on execution
+
+### Recommended Solution: Docker Containerization
+
+To safely execute untrusted code in production, migrate to Docker containers:
+
+1. **Create isolated containers** for each code submission
+2. **Apply resource limits** (CPU, memory, disk)
+3. **Restrict network access** to containers
+4. **Use read-only file systems** where possible
+5. **Run as unprivileged users** inside containers
+6. **Implement timeout enforcement** at container level
+7. **Clean up containers** after execution
+
+### Docker Setup (TODO):
+- Dockerfiles for JavaScript, Python, and Java runtimes
+- Container orchestration for concurrent submissions
+- Resource limiting and monitoring
+- Secure inter-process communication
+- Audit logging of all code executions
+
+**Development Only:** The current implementation is suitable only for local development and testing with trusted users. Do NOT use in production without containerization.
+
 ## Security Features
 
 - Password hashing with bcrypt (10-salt rounds)
