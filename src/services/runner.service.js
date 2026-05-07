@@ -2,33 +2,101 @@ const { spawn } = require("child_process");
 const fs = require("fs");
 const path = require("path");
 
+const getExecutionDetails = (language, filePath) => {
+    switch (language) {
+        case "javascript":
+            return {
+                command: "node",
+                args: [filePath]
+            };
+
+        case "python":
+            return {
+                command: "python",
+                args: [filePath]
+            };
+
+        case "java":
+            return {
+                compile: {
+                    command: "javac",
+                    args: [filePath]
+                },
+                run: {
+                    command: "java",
+                    args: ["-cp", path.dirname(filePath), "Main"]
+                }
+            };
+
+        default:
+            throw new Error("Unsupported language");
+    }
+};
+
 const runCode = async ({ code, testCases, language }) => {
-    const filePath = path.join(__dirname, `temp-${Date.now()}.js`);
+    const fileName = `temp-${Date.now()}`;
+    let filePath;
+
+    // 🔹 Assign extension
+    if (language === "javascript") filePath = path.join(__dirname, `${fileName}.js`);
+    if (language === "python") filePath = path.join(__dirname, `${fileName}.py`);
+    if (language === "java") filePath = path.join(__dirname, `Main.java`);
+
     fs.writeFileSync(filePath, code);
 
+    const execDetails = getExecutionDetails(language, filePath);
+
+    // 🔴 Step 1: Compile (Java only)
+    if (language === "java") {
+        const compileResult = await new Promise((resolve) => {
+            const compile = spawn(execDetails.compile.command, execDetails.compile.args);
+
+            let error = "";
+
+            compile.stderr.on("data", (data) => {
+                error += data.toString();
+            });
+
+            compile.on("close", () => {
+                if (error) {
+                    return resolve({
+                        status: "Compilation Error",
+                        error
+                    });
+                }
+                resolve({ success: true });
+            });
+        });
+
+        if (compileResult.status === "Compilation Error") {
+            fs.unlinkSync(filePath);
+            return compileResult;
+        }
+    }
+
+    // 🔥 Step 2: Run for each test case
     for (let test of testCases) {
         const result = await new Promise((resolve) => {
 
-            const process = spawn("node", [filePath]);
+            const process = spawn(
+                execDetails.run ? execDetails.run.command : execDetails.command,
+                execDetails.run ? execDetails.run.args : execDetails.args
+            );
 
             let output = "";
             let error = "";
 
-            // Capture stdout
             process.stdout.on("data", (data) => {
                 output += data.toString();
             });
 
-            // Capture stderr
             process.stderr.on("data", (data) => {
                 error += data.toString();
             });
 
-            // Send input to stdin
-            process.stdin.write(test.input);
+            process.stdin.write(test.input + "\n");
             process.stdin.end();
 
-            // Timeout protection
             const timeout = setTimeout(() => {
                 process.kill();
                 resolve({
@@ -53,15 +121,13 @@ const runCode = async ({ code, testCases, language }) => {
             });
         });
 
-        // Handle runtime error
         if (result.status === "Runtime Error" || result.status === "Time Limit Exceeded") {
-            fs.unlinkSync(filePath);
+            cleanup(filePath, language);
             return result;
         }
 
-        // Compare output
         if (result.output !== test.output.trim()) {
-            fs.unlinkSync(filePath);
+            cleanup(filePath, language);
             return {
                 status: "Wrong Answer",
                 output: result.output
@@ -69,11 +135,22 @@ const runCode = async ({ code, testCases, language }) => {
         }
     }
 
-    fs.unlinkSync(filePath);
+    cleanup(filePath, language);
 
     return {
         status: "Accepted"
     };
+};
+
+// 🔹 Cleanup function
+const cleanup = (filePath, language) => {
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    // Java creates .class file
+    if (language === "java") {
+        const classFile = path.join(path.dirname(filePath), "Main.class");
+        if (fs.existsSync(classFile)) fs.unlinkSync(classFile);
+    }
 };
 
 module.exports = { runCode };
