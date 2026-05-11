@@ -34,3 +34,25 @@ build/
 
 # Optional REPL history
 .node_repl_history
+
+# =====================
+# Server-specific
+# =====================
+server/node_modules/
+server/package-lock.json
+*.pem
+
+# =====================
+# Client-specific (React/Vite)
+# =====================
+client/node_modules/
+client/dist/
+client/build/
+client/.env
+client/.env.local
+
+# =====================
+# Runner-specific
+# =====================
+runner/node_modules/
+

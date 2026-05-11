@@ -1,0 +1,116 @@
+Interprep: Real-time interview preparation platform
+
+Folder/file Architecture:
+
+interview-platform/
+│
+├── client/        → React Frontend
+├── server/        → Node + Express Backend
+├── runner/        → Docker Code Execution Service
+└── README.md
+
+Backend (server/)
+
+server/
+│
+├── src/
+│   ├── config/
+│   │   ├── db.js
+│   │   └── redis.js
+│   │
+│   ├── controllers/
+│   │   ├── auth.controller.js
+│   │   ├── problem.controller.js
+│   │   ├── submission.controller.js
+│   │   └── contest.controller.js
+│   │
+│   ├── models/
+│   │   ├── user.model.js
+│   │   ├── problem.model.js
+│   │   ├── submission.model.js
+│   │   └── contest.model.js
+│   │
+│   ├── routes/
+│   │   ├── auth.routes.js
+│   │   ├── problem.routes.js
+│   │   ├── submission.routes.js
+│   │   └── contest.routes.js
+│   │
+│   ├── middleware/
+│   │   ├── auth.middleware.js
+│   │   ├── role.middleware.js
+│   │   └── error.middleware.js
+│   │
+│   ├── services/
+│   │   ├── token.service.js
+│   │   ├── runner.service.js
+│   │   └── leaderboard.service.js
+│   │
+│   ├── utils/
+│   │   ├── apiResponse.js
+│   │   └── validators.js
+│   │
+│   ├── sockets/
+│   │   └── contest.socket.js
+│   │
+│   └── app.js
+│
+├── .env
+├── server.js
+└── package.json
+
+Frontend (client/)
+
+client/
+│
+├── src/
+│   ├── app/
+│   │   └── store.js
+│   │
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── authSlice.js
+│   │   │   └── authAPI.js
+│   │   │
+│   │   ├── problems/
+│   │   ├── submissions/
+│   │   └── contests/
+│   │
+│   ├── components/
+│   │   ├── Navbar.jsx
+│   │   ├── ProtectedRoute.jsx
+│   │   └── CodeEditor.jsx
+│   │
+│   ├── pages/
+│   │   ├── Login.jsx
+│   │   ├── Dashboard.jsx
+│   │   ├── ProblemPage.jsx
+│   │   ├── ContestPage.jsx
+│   │   └── AdminPanel.jsx
+│   │
+│   ├── hooks/
+│   │   └── useAuth.js
+│   │
+│   ├── utils/
+│   │   └── axiosInstance.js
+│   │
+│   ├── routes/
+│   │   └── AppRoutes.jsx
+│   │
+│   └── main.jsx
+│
+├── .env
+└── package.json
+
+Runner Service (runner/)
+
+runner/
+│
+├── docker/
+│   ├── Dockerfile.cpp
+│   ├── Dockerfile.java
+│   └── Dockerfile.js
+│
+├── execute.js
+├── index.js
+└── package.json
