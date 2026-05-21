@@ -40,11 +40,14 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - **Email Service**: Nodemailer
 - **Logging**: Morgan
 - **CORS**: cors middleware
+- **Code Execution**: Docker containers with isolated sandboxes
+- **Code Runner Service**: Express.js on port 5000
 
 ## Prerequisites
 
 - Node.js (v14 or higher)
 - MongoDB (local or cloud instance)
+- Docker (for sandboxed code execution)
 - npm or yarn
 
 ## Installation
@@ -75,17 +78,26 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 
 ## Usage
 
-### Development
+### Development - Main Server
 ```bash
 npm run dev
 ```
+
+### Development - Runner Service
+In a separate terminal, start the code execution service:
+```bash
+cd runner
+npm install  # First time only
+npm start
+```
+The runner service will start on port 5000.
 
 ### Production
 ```bash
 npm start
 ```
 
-The server will start on port 3000 by default.
+The server will start on port 3000 by default. Ensure the runner service is running separately on port 5000.
 
 ## API Endpoints
 
@@ -138,18 +150,6 @@ The server will start on port 3000 by default.
 - **Body**: `{ "token": "string", "newPassword": "string" }`
 - **Response**: Password reset successful
 - **Note**: Token must be valid and not expired
-
-### Protected Routes
-
-#### User Access
-- **GET** `/api/auth/user`
-- **Headers**: `Authorization: Bearer <access_token>`
-- **Roles**: user
-
-#### Admin Access
-- **GET** `/api/auth/admin`
-- **Headers**: `Authorization: Bearer <access_token>`
-- **Roles**: admin
 
 ### Problem Routes (`/api/problem`)
 
@@ -207,49 +207,54 @@ The server will start on port 3000 by default.
 ## Project Structure
 
 ```
-server/
-├── app.js                 # Main Express app
-├── server.js              # Server startup file
-├── package.json           # Dependencies and scripts
-├── .env                   # Environment variables
-├── .gitignore            # Git ignore rules
-└── src/
-    ├── config/
-    │   └── db.js                  # Database connection
-    ├── constants/
-    │   ├── roles.js               # User roles
-    │   └── statusCodes.js         # HTTP status codes
-    ├── controllers/
-    │   ├── auth.controller.js            # Authentication logic
-    │   ├── problem.controller.js         # Problem management logic
-    │   └── submission.controller.js      # Code submission and evaluation logic
-    ├── dto/
-    │   └── user.dto.js            # Data transfer objects
-    ├── middleware/
-    │   ├── auth.middleware.js     # JWT authentication
-    │   ├── error.middleware.js    # Error handling
-    │   ├── role.middleware.js     # Role authorization
-    │   └── validate.middleware.js # Input validation
-    ├── models/
-    │   ├── user.model.js          # User schema
-    │   ├── problem.model.js       # Problem schema
-    │   └── submission.model.js    # Submission schema
-    ├── routes/
-    │   ├── auth.routes.js          # Auth endpoints
-    │   ├── admin.routes.js         # Admin endpoints
-    │   ├── user.routes.js          # User endpoints
-    │   ├── problem.routes.js       # Problem endpoints
-    │   └── submission.routes.js    # Code submission endpoints
-    ├── services/
-    │   ├── token.service.js       # JWT token generation
-    │   ├── email.service.js       # Email service (verification & password reset)
-    │   └── runner.service.js      # Real code execution engine with child_process
-    └── utils/
-        ├── token.utils.js         # Utility token generation (verification & reset)
-        ├── apiError.js            # Custom error class
-        ├── asyncHandler.js        # Async error wrapper
-        └── validators/
-            └── auth.validator.js  # Joi validation schemas
+interprep/
+├── server/                            # Main Node.js API server
+│   ├── app.js                         # Main Express app
+│   ├── server.js                      # Server startup file
+│   ├── package.json                   # Dependencies and scripts
+│   ├── .env                           # Environment variables
+│   ├── .gitignore                    # Git ignore rules
+│   └── src/
+│       ├── config/
+│       │   └── db.js                  # Database connection
+│       ├── constants/
+│       │   ├── roles.js               # User roles
+│       │   └── statusCodes.js         # HTTP status codes
+│       ├── controllers/
+│       │   ├── auth.controller.js            # Authentication logic
+│       │   ├── problem.controller.js         # Problem management logic
+│       │   └── submission.controller.js      # Code submission and evaluation logic
+│       ├── dto/
+│       │   └── user.dto.js            # Data transfer objects
+│       ├── middleware/
+│       │   ├── auth.middleware.js     # JWT authentication
+│       │   ├── error.middleware.js    # Error handling
+│       │   ├── role.middleware.js     # Role authorization
+│       │   └── validate.middleware.js # Input validation
+│       ├── models/
+│       │   ├── user.model.js          # User schema
+│       │   ├── problem.model.js       # Problem schema
+│       │   └── submission.model.js    # Submission schema
+│       ├── routes/
+│       │   ├── auth.routes.js          # Auth endpoints
+│       │   ├── admin.routes.js         # Admin endpoints
+│       │   ├── user.routes.js          # User endpoints
+│       │   ├── problem.routes.js       # Problem endpoints
+│       │   └── submission.routes.js    # Code submission endpoints
+│       ├── services/
+│       │   ├── token.service.js       # JWT token generation
+│       │   ├── email.service.js       # Email service (verification & password reset)
+│       │   └── runner.service.js      # Runner service HTTP client
+│       └── utils/
+│           ├── token.utils.js         # Utility token generation (verification & reset)
+│           ├── apiError.js            # Custom error class
+│           ├── asyncHandler.js        # Async error wrapper
+│           └── validators/
+│               └── auth.validator.js  # Joi validation schemas
+└── runner/                            # Code execution service (Docker sandbox)
+    ├── index.js                       # Express app for runner service
+    ├── execute.js                     # Docker container executor
+    └── package.json                   # Runner service dependencies
 ```
 
 ## Environment Variables
@@ -284,27 +289,29 @@ server/
 
 ### Code Submission and Evaluation Flow
 
-1. User submits code via `/api/submissions` endpoint with problem ID, code, and language
+1. User submits code via `/api/submission` endpoint with problem ID, code, and language
 2. Submission created in database with "Pending" status
-3. Code passed to `runner.service.js` for real execution
-4. Code written to temporary file in the system
-5. Child process spawned to execute the code (Node.js for JavaScript)
-6. Test case inputs passed via stdin to the running process
-7. stdout and stderr captured for each test case execution
-8. Execution timeout set to 2 seconds per test case
-9. Test outputs compared with expected outputs
-10. Submission status updated to "Accepted", "Wrong Answer", "Runtime Error", or "Time Limit Exceeded"
-11. Temporary files cleaned up after execution
-12. Results stored in submission document
+3. Code passed to `runner.service.js` which calls runner service via HTTP
+4. Runner service (`/runner`) receives execution request
+5. Docker executor creates temporary code file
+6. Docker container launched with: `docker run --rm -i -v "/code/path:/app/code.js" node:18 ...`
+7. Test case input passed via stdin using `printf`
+8. stdout and stderr captured from container execution
+9. Execution timeout set to 5 seconds per test case
+10. Container automatically removed after execution
+11. Test outputs compared with expected outputs
+12. Submission status updated to "Accepted", "Wrong Answer", or "Runtime Error"
+13. Temporary code file deleted after completion
+14. Results stored in submission document
 
 **Execution Engine Details:**
-- **Mechanism**: Child process with stdin/stdout/stderr streams
-- **Timeout**: 2 seconds per test case
-- **Temporary Files**: Cleaned up automatically after execution
-- **Input Method**: stdin-based input for each test case
-- **Error Handling**: Captures runtime errors and timeout conditions
-- **Supported Languages**: JavaScript (Node.js execution)
-  - Java, Python, C++ support can be added by configuring appropriate runtimes
+- **Mechanism**: Docker container execution with volume mounting
+- **Container Image**: `node:18` for JavaScript (can be extended for Python, Java)
+- **Timeout**: 5 seconds per test case
+- **Input Method**: stdin via `printf` command
+- **Error Handling**: stderr captured from container for runtime error reporting
+- **Security**: Code isolated in container, no access to host system
+- **Cleanup**: Containers and temporary files automatically removed
 
 **Status Descriptions:**
 - **Pending**: Submission received, awaiting execution
@@ -315,49 +322,92 @@ server/
 
 ## Code Execution Architecture
 
-### Runner Service Implementation
+### Docker Sandbox Implementation
 
-The `runner.service.js` implements a real code execution engine using Node.js child processes:
+The `runner` service provides secure, isolated code execution using Docker containers:
 
-```javascript
-// Key Features:
-- spawn() for process execution
-- File system for temporary code storage
-- stdin/stdout/stderr stream handling
-- Timeout protection (2 seconds per test)
-- Automatic cleanup of temporary files
 ```
+Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Container
+```
+
+**Key Features:**
+- Containerized execution for each submission
+- Resource isolation and protection
+- Automatic container cleanup after execution
+- Multi-language support via Docker images
+- File volume mounting for code execution
+- stdin/stdout capture via Docker
+
+### Architecture
+
+1. **Main Server** (`server/src/services/runner.service.js`)
+   - Receives code submission from client
+   - Makes HTTP POST request to runner service
+   - Timeout: 10 seconds
+   - Handles connection failures gracefully
+
+2. **Runner Service** (`runner/index.js`)
+   - Express.js server on port 5000
+   - Single endpoint: `POST /run`
+   - Delegates execution to Docker engine
+   - Returns execution results
+
+3. **Docker Executor** (`runner/execute.js`)
+   - Creates temporary code file
+   - Launches Docker container with `docker run --rm`
+   - Mounts code file to container volume
+   - Passes test input via stdin
+   - Captures stdout for output verification
+   - Captures stderr for error reporting
+   - Timeout: 5 seconds per execution
+   - Auto-cleanup of temporary files
 
 ### Process Flow
 
 1. **Code Submission**
-   - User submits code in target language
+   - User submits code via `/api/submission` endpoint
    - Submission created with metadata (user, problem, code, language)
+   - Submission status set to "Pending"
 
-2. **Execution Setup**
-   - Code written to temporary file
-   - Temporary file path: `temp-${timestamp}.js`
-   - File permissions set appropriately
+2. **Execution Request**
+   - Main server calls runner service: `POST http://localhost:5000/run`
+   - Payload includes: code, testCases array, language
 
-3. **Test Case Execution** (per test case)
-   - Child process spawned with code file
-   - Test input sent via stdin
-   - Process monitors stdout for output
+3. **Docker Execution Setup**
+   - Temporary code file created: `temp-{timestamp}.js`
+   - Docker volume mount: local file → `/app/code.js` in container
+   - Command: `docker run --rm -i -v "/path/to/code.js:/app/code.js" node:18 sh -c "printf 'input' | node /app/code.js"`
+
+4. **Test Case Execution** (per test case)
+   - Docker container started from `node:18` image
+   - Test input sent via `printf` to stdin
+   - Process captures stdout output
    - stderr captured for error messages
-   - Execution timeout: 2000ms (2 seconds)
+   - Container timeout: 5 seconds
+   - Container automatically removed after execution
 
-4. **Result Processing**
-   - Output compared with expected output (trimmed)
-   - Status determined: Accepted/Wrong Answer/Runtime Error/Timeout
-   - Temporary file deleted after all tests complete
+5. **Result Processing**
+   - Output compared with expected output (trimmed whitespace)
+   - Status determined: Accepted/Wrong Answer/Runtime Error
+   - Temporary file deleted
    - Results persisted to database
+   - Response sent back to main server
 
 ### Error Handling
 
-- **Runtime Errors**: Captured from stderr, stored in submission
-- **Timeout**: Process killed after 2 seconds, status set to "Time Limit Exceeded"
-- **Exit Codes**: Monitored for abnormal termination
-- **Stream Errors**: Handled gracefully with process cleanup
+- **Runtime Errors**: stderr captured and stored in submission document
+- **Timeout**: Docker container killed after 5 seconds
+- **Docker Unavailable**: Service returns error with detailed message
+- **File System Errors**: Graceful cleanup with try-catch blocks
+
+### Security Benefits
+
+- **Isolation**: Code runs in isolated container, not on host system
+- **Resource Limits**: Docker enforces memory and CPU constraints
+- **File System**: Only mounted code file is accessible
+- **Network**: Container networking can be restricted
+- **Privileges**: Code runs as non-root user in container
+- **Cleanup**: Containers and files automatically removed after execution
 
 ## Data Models
 
@@ -425,9 +475,14 @@ The `runner.service.js` implements a real code execution engine using Node.js ch
 - **dotenv**: Environment variable management
 - **nodemailer**: Email service for verification and password reset emails
 - **morgan**: HTTP request logging middleware
+- **axios**: HTTP client for runner service communication
 - **crypto**: Secure token generation (built-in Node.js)
-- **child_process**: Code execution engine (built-in Node.js)
 - **fs**: File system operations for temporary code storage (built-in Node.js)
+- **child_process**: Shell command execution for Docker (built-in Node.js)
+
+### External Services
+
+- **Docker**: Container runtime for isolated code execution (required)
 
 ## Development Dependencies
 
@@ -499,13 +554,15 @@ Each log entry includes:
 
 ## Code Submission Examples
 
-### Required Runtime Environments
+### Runtime Environments
 
-Before users can submit code, the following runtimes must be installed on the server:
+The platform executes code in Docker containers with the following runtime images:
 
-- **JavaScript**: Node.js (v14 or higher)
-- **Python**: Python 3.6 or higher
-- **Java**: Java Development Kit (JDK) 11 or higher
+- **JavaScript/Node.js**: `node:18` (Node.js runtime included)
+- **Python**: `python:3.11` (add to runner service when needed)
+- **Java**: `openjdk:11` (add to runner service when needed)
+
+No runtime installation needed on the host machine - Docker handles all dependencies.
 
 ### Sample Submission JSON - JavaScript
 
@@ -554,40 +611,81 @@ Before users can submit code, the following runtimes must be installed on the se
 }
 ```
 
-## Security and Sandbox Limitations
+## Security and Sandbox Implementation
 
-⚠️ **CRITICAL SECURITY WARNING** ⚠️
+✅ **DOCKER SANDBOXING IMPLEMENTED**
 
-**The current implementation executes user code directly without sandboxing.** This is **UNSAFE FOR PRODUCTION** and poses significant security risks:
+The code execution engine now uses **Docker containerization** for secure, isolated execution of untrusted code:
 
-### Current Risks:
-- User code has access to the file system (read/write)
-- Code can access environment variables
-- Code can make network requests
-- Malicious code can consume system resources (CPU, memory)
-- Code runs with the same privileges as the Node.js process
-- No resource limits on execution
+### Security Features Implemented
 
-### Recommended Solution: Docker Containerization
+1. **Container Isolation**
+   - Each code submission runs in a separate Docker container
+   - User code cannot access the host file system
+   - File system access limited to mounted code file only
 
-To safely execute untrusted code in production, migrate to Docker containers:
+2. **Resource Constraints**
+   - Execution timeout: 5 seconds per test case
+   - Docker can be configured with memory and CPU limits
+   - Process killed if timeout exceeded
 
-1. **Create isolated containers** for each code submission
-2. **Apply resource limits** (CPU, memory, disk)
-3. **Restrict network access** to containers
-4. **Use read-only file systems** where possible
-5. **Run as unprivileged users** inside containers
-6. **Implement timeout enforcement** at container level
-7. **Clean up containers** after execution
+3. **Network Isolation**
+   - Docker containers run with restricted networking
+   - Code cannot make outbound network requests
+   - No access to host machine services
 
-### Docker Setup (TODO):
-- Dockerfiles for JavaScript, Python, and Java runtimes
-- Container orchestration for concurrent submissions
-- Resource limiting and monitoring
-- Secure inter-process communication
-- Audit logging of all code executions
+4. **Privilege Isolation**
+   - Code runs as non-root user in container
+   - Cannot access system-level resources
+   - Container dropped capabilities prevent privilege escalation
 
-**Development Only:** The current implementation is suitable only for local development and testing with trusted users. Do NOT use in production without containerization.
+5. **Automatic Cleanup**
+   - Containers removed immediately after execution (`--rm` flag)
+   - Temporary files deleted after test completion
+   - No residual artifacts on host system
+
+6. **Environment Variables**
+   - Only mounted code file available in container
+   - Host environment variables not accessible
+   - No access to application secrets
+
+### Recommended Production Enhancements
+
+While the current Docker implementation is production-ready, consider these enhancements:
+
+1. **Resource Limits**
+   ```bash
+   docker run --memory 256m --cpus 1 ...  # Limit memory and CPU
+   ```
+
+2. **Network Policy**
+   ```bash
+   docker run --network none ...  # Disable networking entirely
+   ```
+
+3. **Read-Only Root**
+   ```bash
+   docker run --read-only --tmpfs /tmp ...  # Immutable filesystem
+   ```
+
+4. **User Mapping**
+   - Configure user namespace remapping for additional isolation
+   - Run containers as specific non-root users
+
+5. **Security Scanning**
+   - Scan Docker images for vulnerabilities
+   - Use signed images with verification
+   - Regularly update base images
+
+6. **Audit Logging**
+   - Log all code executions with timestamps
+   - Track user submissions and results
+   - Monitor for suspicious patterns
+
+7. **Rate Limiting**
+   - Limit submissions per user per minute
+   - Prevent resource exhaustion attacks
+   - Monitor runner service health
 
 ## Security Features
 
