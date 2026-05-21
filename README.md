@@ -294,24 +294,34 @@ interprep/
 3. Code passed to `runner.service.js` which calls runner service via HTTP
 4. Runner service (`/runner`) receives execution request
 5. Docker executor creates temporary code file
-6. Docker container launched with: `docker run --rm -i -v "/code/path:/app/code.js" node:18 ...`
-7. Test case input passed via stdin using `printf`
-8. stdout and stderr captured from container execution
-9. Execution timeout set to 5 seconds per test case
-10. Container automatically removed after execution
-11. Test outputs compared with expected outputs
-12. Submission status updated to "Accepted", "Wrong Answer", or "Runtime Error"
-13. Temporary code file deleted after completion
-14. Results stored in submission document
+6. **For each test case in testCases array:**
+   - Test input base64 encoded for safe shell passage
+   - Docker container launched with: `docker run --rm -i -v "/code/path:/app/code.js" node:18 sh -c "echo 'base64input' | base64 -d | node /app/code.js"`
+   - stdout and stderr captured from container execution
+   - Execution timeout: 5 seconds per test case
+   - Container automatically removed after execution
+   - Output compared with expected output
+   - If mismatch: return "Wrong Answer" with failedTestCase number
+   - If error: return "Runtime Error" with failedTestCase number
+   - If match: continue to next test case
+7. **Only return "Accepted" if ALL test cases pass**
+8. Temporary code file deleted after completion
+9. Results stored in submission document with test details
+
+**Security Improvements:**
+- Input base64 encoded to prevent shell injection (safe handling of: ' " \ $ characters)
+- All test cases validated (not just first one)
 
 **Execution Engine Details:**
 - **Mechanism**: Docker container execution with volume mounting
 - **Container Image**: `node:18` for JavaScript (can be extended for Python, Java)
 - **Timeout**: 5 seconds per test case
-- **Input Method**: stdin via `printf` command
+- **Input Method**: stdin via base64 encoded input (prevents shell injection)
 - **Error Handling**: stderr captured from container for runtime error reporting
+- **Test Coverage**: ALL test cases validated (only "Accepted" if all pass)
+- **Failed Test Tracking**: Reports which test case failed
 - **Security**: Code isolated in container, no access to host system
-- **Cleanup**: Containers and temporary files automatically removed
+- **Input Sanitization**: Base64 encoding safely handles special characters (', ", \, $)
 
 **Status Descriptions:**
 - **Pending**: Submission received, awaiting execution
@@ -352,15 +362,17 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
    - Delegates execution to Docker engine
    - Returns execution results
 
-3. **Docker Executor** (`runner/execute.js`)
+### Docker Executor (`runner/execute.js`)
    - Creates temporary code file
    - Launches Docker container with `docker run --rm`
    - Mounts code file to container volume
-   - Passes test input via stdin
+   - **Iterates through ALL test cases** (not just first one)
+   - **Base64 encodes test input** for safe stdin passage (prevents shell injection)
    - Captures stdout for output verification
    - Captures stderr for error reporting
    - Timeout: 5 seconds per execution
    - Auto-cleanup of temporary files
+   - Reports which test case failed (if any)
 
 ### Process Flow
 
@@ -378,13 +390,17 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
    - Docker volume mount: local file → `/app/code.js` in container
    - Command: `docker run --rm -i -v "/path/to/code.js:/app/code.js" node:18 sh -c "printf 'input' | node /app/code.js"`
 
-4. **Test Case Execution** (per test case)
-   - Docker container started from `node:18` image
-   - Test input sent via `printf` to stdin
-   - Process captures stdout output
-   - stderr captured for error messages
-   - Container timeout: 5 seconds
-   - Container automatically removed after execution
+4. **Test Case Execution** (iterate through ALL test cases)
+   - For each test case:
+     - Input base64 encoded to prevent shell injection
+     - Docker container started from `node:18` image
+     - Encoded input decoded via `echo ... | base64 -d | node ...`
+     - Process captures stdout output
+     - stderr captured for error messages
+     - Container timeout: 5 seconds
+     - Container automatically removed after execution
+   - If ANY test case fails: return error with failedTestCase number
+   - If ALL test cases pass: return Accepted status with results
 
 5. **Result Processing**
    - Output compared with expected output (trimmed whitespace)
@@ -486,7 +502,7 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
 
 ## Development Dependencies
 
-- **nodemon**: Development server auto-restart
+- **node**: Development server manual-restart
 
 ## Error Handling
 
