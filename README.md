@@ -22,12 +22,12 @@ A Node.js backend server for the Interprep - Real-Time Interview Preparation Pla
 - Interview problem management (DSA, HR, System Design)
 - Problem filtering by difficulty and category
 - Pagination support for problems
-- Real code execution engine with stdin/stdout handling
+- Real code execution engine with Docker sandboxing
 - Multi-test case evaluation per submission
-- Execution timeout protection (2 seconds per test)
+- Execution timeout protection (5 seconds per test)
 - Automatic code cleanup after execution
 - Comprehensive error capture (runtime errors, timeouts)
-- Multi-language support (JavaScript native, Java/Python/C++ ready)
+- Multi-language code execution (JavaScript, Java, Python, C++)
 
 ## Tech Stack
 
@@ -254,7 +254,9 @@ interprep/
 └── runner/                            # Code execution service (Docker sandbox)
     ├── index.js                       # Express app for runner service
     ├── execute.js                     # Docker container executor
-    └── package.json                   # Runner service dependencies
+    ├── package.json                   # Runner service dependencies
+    ├── pull-images.sh                 # Linux/Mac: Pull all Docker images
+    └── pull-images.bat                # Windows: Pull all Docker images
 ```
 
 ## Environment Variables
@@ -289,29 +291,46 @@ interprep/
 
 ### Code Submission and Evaluation Flow
 
-1. User submits code via `/api/submission` endpoint with problem ID, code, and language
+1. User submits code via `/api/submission` endpoint with problem ID, code, and **language** (javascript/python/java/cpp)
 2. Submission created in database with "Pending" status
-3. Code passed to `runner.service.js` which calls runner service via HTTP
-4. Runner service (`/runner`) receives execution request
-5. Docker executor creates temporary code file
-6. Docker container launched with: `docker run --rm -i -v "/code/path:/app/code.js" node:18 ...`
-7. Test case input passed via stdin using `printf`
-8. stdout and stderr captured from container execution
-9. Execution timeout set to 5 seconds per test case
-10. Container automatically removed after execution
-11. Test outputs compared with expected outputs
-12. Submission status updated to "Accepted", "Wrong Answer", or "Runtime Error"
-13. Temporary code file deleted after completion
-14. Results stored in submission document
+3. Code passed to `runner.service.js` which calls runner service via HTTP with language parameter
+4. Runner service (`/runner`) receives execution request with language specification
+5. Docker executor loads language configuration (image, entry point, build commands)
+6. Creates temporary code file with language-specific extension (.js, .py, .java, .cpp)
+7. **For each test case in testCases array:**
+   - Test input base64 encoded for safe shell passage
+   - Language-appropriate Alpine Docker container launched (node:18-alpine, python:3.11-alpine, openjdk:11-jdk-alpine, or gcc:11-alpine)
+   - **Compilation** (if needed): Java code compiled with `javac Main.java`, C++ compiled with `g++ -o /app/code /app/code.cpp`
+   - **Execution**: Language entry point runs (node /app/code.js, python /app/code.py, java Main, or /app/code)
+   - stdout and stderr captured from container execution
+   - Execution timeout: 5 seconds per test case
+   - Container automatically removed after execution
+   - Output compared with expected output
+   - If mismatch: return "Wrong Answer" with failedTestCase number and language
+   - If error: return "Runtime Error" with failedTestCase number and language
+   - If match: continue to next test case
+8. **Only return "Accepted" if ALL test cases pass**
+9. Temporary code file deleted after completion
+10. Results stored in submission document with test details and language info
+
+**Security Improvements:**
+- Input base64 encoded to prevent shell injection (safe handling of: ' " \ $ characters)
+- All test cases validated (not just first one)
+- Language-specific Docker images provide isolation
+- Each language runs in its own container namespace
 
 **Execution Engine Details:**
 - **Mechanism**: Docker container execution with volume mounting
-- **Container Image**: `node:18` for JavaScript (can be extended for Python, Java)
+- **Supported Languages**: JavaScript, Python, Java, C++ (extensible to more)
+- **Container Images**: Lightweight Alpine-based images (node:18-alpine, python:3.11-alpine, openjdk:11-jdk-alpine, gcc:11-alpine)
+- **Compilation**: Automatic for Java (javac) and C++ (g++)
 - **Timeout**: 5 seconds per test case
-- **Input Method**: stdin via `printf` command
+- **Input Method**: stdin via base64 encoded input (prevents shell injection)
 - **Error Handling**: stderr captured from container for runtime error reporting
+- **Test Coverage**: ALL test cases validated (only "Accepted" if all pass)
+- **Failed Test Tracking**: Reports which test case failed and language used
 - **Security**: Code isolated in container, no access to host system
-- **Cleanup**: Containers and temporary files automatically removed
+- **Input Sanitization**: Base64 encoding safely handles special characters (', ", \, $)
 
 **Status Descriptions:**
 - **Pending**: Submission received, awaiting execution
@@ -352,15 +371,22 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
    - Delegates execution to Docker engine
    - Returns execution results
 
-3. **Docker Executor** (`runner/execute.js`)
-   - Creates temporary code file
-   - Launches Docker container with `docker run --rm`
+### Docker Executor (`runner/execute.js`)
+   - Supports JavaScript, Python, Java, and C++
+   - Uses lightweight Alpine-based Docker images for faster pulls and smaller container sizes
+   - Language-specific configuration: image, entry point, build commands
+   - Java/C++: Automatic compilation step (javac, g++)
+   - JavaScript/Python: Direct execution
+   - Creates temporary code file with appropriate extension
    - Mounts code file to container volume
-   - Passes test input via stdin
+   - **Iterates through ALL test cases** (not just first one)
+   - **Base64 encodes test input** for safe stdin passage (prevents shell injection)
    - Captures stdout for output verification
    - Captures stderr for error reporting
    - Timeout: 5 seconds per execution
    - Auto-cleanup of temporary files
+   - Reports which test case failed (if any)
+   - Includes language in response for audit trail
 
 ### Process Flow
 
@@ -378,13 +404,19 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
    - Docker volume mount: local file → `/app/code.js` in container
    - Command: `docker run --rm -i -v "/path/to/code.js:/app/code.js" node:18 sh -c "printf 'input' | node /app/code.js"`
 
-4. **Test Case Execution** (per test case)
-   - Docker container started from `node:18` image
-   - Test input sent via `printf` to stdin
-   - Process captures stdout output
-   - stderr captured for error messages
-   - Container timeout: 5 seconds
-   - Container automatically removed after execution
+4. **Test Case Execution** (iterate through ALL test cases)
+   - For each test case:
+     - Input base64 encoded to prevent shell injection
+     - Language-specific Alpine Docker container started
+     - **Build step** (if needed): Java compiles `javac Main.java`, C++ compiles `g++ -o /app/code /app/code.cpp`
+     - **Execution step**: Language-specific entry point runs (`node`, `python`, `java`, or compiled binary)
+     - Encoded input decoded via `echo ... | base64 -d | ...` and piped to process stdin
+     - Process captures stdout output
+     - stderr captured for error messages
+     - Container timeout: 5 seconds
+     - Container automatically removed after execution
+   - If ANY test case fails: return error with failedTestCase number
+   - If ALL test cases pass: return Accepted status with results and language
 
 5. **Result Processing**
    - Output compared with expected output (trimmed whitespace)
@@ -486,7 +518,7 @@ Main Server → Axios HTTP Call → Runner Service (port 5000) → Docker Contai
 
 ## Development Dependencies
 
-- **nodemon**: Development server auto-restart
+- **node**: Development server manual-restart
 
 ## Error Handling
 
@@ -554,15 +586,45 @@ Each log entry includes:
 
 ## Code Submission Examples
 
-### Runtime Environments
+### Supported Languages
 
-The platform executes code in Docker containers with the following runtime images:
+The platform executes code in Docker containers with optimized configurations for each language:
 
-- **JavaScript/Node.js**: `node:18` (Node.js runtime included)
-- **Python**: `python:3.11` (add to runner service when needed)
-- **Java**: `openjdk:11` (add to runner service when needed)
+| Language | Docker Image | File Extension | Entry Point | Build Step |
+|----------|--------------|----------------|-------------|-----------|
+| **JavaScript** | `node:18-alpine` | `.js` | `node /app/code.js` | None |
+| **Python** | `python:3.11-alpine` | `.py` | `python /app/code.py` | None |
+| **Java** | `openjdk:11-jdk-alpine` | `.java` | `java Main` | `javac Main.java` |
+| **C++** | `gcc:11-alpine` | `.cpp` | `/app/code` | `g++ -o /app/code /app/code.cpp` |
 
-No runtime installation needed on the host machine - Docker handles all dependencies.
+No runtime installation needed on the host machine - Docker handles all dependencies. Alpine-based images are lightweight and fast to pull.
+
+### Docker Image Setup
+
+Pull the required Docker images before first use (one-time setup):
+
+**Windows:**
+```bash
+cd runner
+pull-images.bat
+```
+
+**Linux/Mac:**
+```bash
+cd runner
+chmod +x pull-images.sh
+./pull-images.sh
+```
+
+**Manual pull:**
+```bash
+docker pull node:18-alpine
+docker pull python:3.11-alpine
+docker pull openjdk:11-jdk-alpine
+docker pull gcc:11-alpine
+```
+
+Images will be cached locally after first pull - subsequent submissions use cached images for fast execution.
 
 ### Sample Submission JSON - JavaScript
 
@@ -608,6 +670,16 @@ No runtime installation needed on the host machine - Docker handles all dependen
   "problem": "69f8b3a29d1538167eedcd6c",
   "code": "import java.util.*;\npublic class Main {\n  public static void main(String[] args) {\n    Scanner sc = new Scanner(System.in);\n    int a = sc.nextInt();\n    int b = sc.nextInt();\n    System.out.println(a + b);\n  }\n}",
   "language": "java"
+}
+```
+
+### Sample Submission JSON - C++
+
+```json
+{
+  "problem": "69f8b3a29d1538167eedcd6c",
+  "code": "#include <iostream>\nusing namespace std;\n\nint main() {\n  int a, b;\n  cin >> a >> b;\n  cout << a + b << endl;\n  return 0;\n}",
+  "language": "cpp"
 }
 ```
 
