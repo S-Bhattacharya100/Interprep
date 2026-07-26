@@ -15,11 +15,11 @@ router.post("/register", validate(registerSchema), authController.register);
 router.post("/resend-verification", validate(resendVerificationSchema), authController.resendVerification);
 router.post("/login", validate(loginSchema), authController.logIn);
 
-router.post("/refresh", validate(refreshTokenSchema), authController.refreshTokenHandler);
-router.post("/logout", validate(logoutSchema), authController.logout);
-
 router.get("/verify-email", authController.verifyEmail);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
+
+router.post("/refresh", validate(refreshTokenSchema), authController.refreshTokenHandler);
+router.post("/logout", validate(logoutSchema), authController.logout);
 
 module.exports = router;
