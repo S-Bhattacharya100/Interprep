@@ -1,0 +1,80 @@
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { registerUser } from "../features/auth/authApi";
+
+const Register = () => {
+    const [formData, setFormData] = ({
+        name: "",
+        email: "",
+        password: "",
+        conformPassword: ""
+    });
+
+    const [loading, setLoading] = (false);
+    const [success, setSuccess] = ("");
+    const [error, setError] = ("");
+
+    return (
+        <div>
+            <h2>Interprep registration</h2>
+            {success && (
+                <div>
+                    {success}
+                    <br />
+                    <br />
+
+                    Please verify your email before logging in
+
+                    <br />
+                    <br />
+
+                    Didn't receive the email?
+
+                    <Link to={"/resend-verication"}>
+                        {"Click here"}
+                    </Link>
+                </div>
+            )}
+
+            {error && (
+                <div>
+                    {error}
+                </div>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <div>
+                    <label>Name</label>
+
+                    <input type="text" name="name" placeholder="Enter your name" value={formData.name} onChange={handleChange} />
+                </div>
+                <div>
+                    <label>Email</label>
+
+                    <input type="email" name="email" placeholder="Enter your email" value={formData.email} onChange={handleChange} />
+                </div>
+                <div>
+                    <label>Password</label>
+
+                    <input type="password" name="password" placeholder="Enter your password" value={formData.password} onChange={handleChange} />
+                </div>
+                <div>
+                    <label>Conform password</label>
+
+                    <input type="password" name="conformPassword" placeholder="Enter your password again" value={formData.conformPassword} onChange={handleChange} />
+                </div>
+
+                <button disabled={loading}>{loading ? "Regestering..." : "Register"}</button>
+            </form>
+
+            <p>
+                Already have an account?{" "}
+                <Link to={"/login"}>
+                    Login
+                </Link>
+            </p>
+        </div>
+    );
+};
+
+export default Register;
