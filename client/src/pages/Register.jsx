@@ -14,6 +14,61 @@ const Register = () => {
     const [success, setSuccess] = ("");
     const [error, setError] = ("");
 
+    // Handle input change
+    const handleChange = (e) => {
+        setFormData({
+            ...formData,
+            [e.target.name]: e.target.value
+        });
+    };
+
+    // Handle form submit 
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+
+        setLoading("");
+        setSuccess("");
+
+        // Client-side validations
+        if(!formData.name.trim()) {
+            return setError("Name is requird");
+        }
+        if(!formData.email.trim()) {
+            return setError("email is requird");
+        }
+        if(!formData.password) {
+            return setError("Password is requird");
+        }
+        if(formData.password !== formData.conformPassword) {
+            return setError("Passwords do not match!");
+        }
+
+        try {
+            setLoading(true);
+
+            const response = await registerUser({
+                name: formData.name,
+                email: formData.email,
+                password: formData.password,
+            });
+
+            setSuccess(response.data.message);
+
+            // Clear form
+            setFormData({
+                name: "",
+                email: "",
+                password: "",
+                conformPassword: "",
+            });
+
+        } catch (err) {
+            setError(err.response?.data?.message || "Registration failed");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div>
             <h2>Interprep registration</h2>
