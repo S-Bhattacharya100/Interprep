@@ -1,12 +1,34 @@
-# INTERPREP SERVER DOCUMENTATION
+# INTERPREP MONOREPO DOCUMENTATION
 
-## Real-Time Interview Preparation Platform - Server Section
+## Real-Time Interview Preparation Platform - Full-Stack Monorepo
 
 ---
 
-**Version:** 1.0  
-**Date:** May 2026  
+**Version:** 1.1  
+**Date:** July 2026  
 **Author:** Swapnamoy Bhattacharya
+
+---
+
+## SECTION 0: MONOREPO OVERVIEW
+
+### 0.1 Repository Structure
+The repository has evolved into a monorepo that now includes three main services:
+
+- `client/` – React + Vite frontend for the user experience
+- `server/` – Express.js backend for authentication, problems, submissions, and API routing
+- `runner/` – Docker-based code execution service for safe sandboxed evaluation
+
+### 0.2 Frontend Authentication Layer
+The frontend now includes a modern auth setup built with Redux Toolkit and Axios:
+
+- `client/src/utils/axiosInstance.js` – shared Axios instance that attaches the JWT token to requests
+- `client/src/app/store.js` – Redux store configuration
+- `client/src/features/auth/authAPI.js` – API helpers for register, login, verification, reset, refresh, and logout
+- `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state and persistence
+- `client/src/pages/Register.jsx` – registration page with validation and feedback messaging
+
+This documentation continues to focus primarily on the backend and code execution services, while the frontend modules above are now part of the overall platform architecture.
 
 ---
 
