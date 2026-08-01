@@ -3,6 +3,8 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Updated monorepo documentation and README to reflect client/server/runner structure
-- Added frontend auth flow documentation for Axios instance, Redux store, auth API, auth slice, and registration page
+- Updated the README and project documentation to reflect the latest authentication system changes.
+- Documented the new frontend authentication pages: Register, Login, Verify Email, Forgot Password, Reset Password, and Dashboard.
+- Added documentation for the route configuration and protected-route guard used for authenticated access.
+- Clarified the frontend auth architecture around Axios, Redux Toolkit, auth API helpers, and auth state management.
 

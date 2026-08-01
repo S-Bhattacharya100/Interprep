@@ -4,8 +4,8 @@
 
 ---
 
-**Version:** 1.1  
-**Date:** July 2026  
+**Version:** 1.1 
+**Date:** August 2026  
 **Author:** Swapnamoy Bhattacharya
 
 ---
@@ -27,10 +27,24 @@ The frontend now includes a modern auth setup built with Redux Toolkit and Axios
 - `client/src/features/auth/authAPI.js` – API helpers for register, login, verification, reset, refresh, and logout
 - `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state and persistence
 - `client/src/pages/Register.jsx` – registration page with validation and feedback messaging
+- `client/src/pages/Login.jsx` – login page for returning users
+- `client/src/pages/VerifyEmail.jsx` – email verification flow
+- `client/src/pages/ForgotPassword.jsx` – password recovery entry point
+- `client/src/pages/ResetPassword.jsx` – password reset form
+- `client/src/routes/AppRoutes.jsx` – route configuration for public and protected pages
+- `client/src/components/ProtectedRoute.jsx` – route guard that redirects unauthenticated users to login
 
 This documentation continues to focus primarily on the backend and code execution services, while the frontend modules above are now part of the overall platform architecture.
 
 ---
+
+### 0.3 Recent Authentication Changes
+The latest frontend changes introduce a more complete authentication experience:
+
+- Public routes for registration, login, email verification, forgot password, and reset password
+- A protected dashboard route that requires a valid access token
+- A reusable protected-route component to enforce frontend access control
+- Routing setup that redirects users to the login page when they are not authenticated
 
 # TABLE OF CONTENTS
 

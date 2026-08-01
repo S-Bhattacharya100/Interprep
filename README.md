@@ -103,6 +103,12 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/features/auth/authAPI.js` — reusable auth API helpers for register, login, refresh, logout, and password actions
 - `client/src/features/auth/authSlice.js` — auth slice for Redux state and actions
 - `client/src/pages/Register.jsx` — registration page with validation and user feedback
+- `client/src/pages/Login.jsx` — login experience for returning users
+- `client/src/pages/VerifyEmail.jsx` — email verification flow
+- `client/src/pages/ForgotPassword.jsx` — password recovery entry point
+- `client/src/pages/ResetPassword.jsx` — password reset form
+- `client/src/routes/AppRoutes.jsx` — route configuration for public and protected pages
+- `client/src/components/ProtectedRoute.jsx` — guard that redirects unauthenticated users to login
 
 ## API overview
 
@@ -120,7 +126,18 @@ The React client includes a professional auth architecture that is easy to maint
 
 - `GET /api/problem`
 - `POST /api/problem` (admin only)
-- `POST /api/submissions`
+- `POST /api/submission`
+
+### Frontend auth routes
+
+The client now includes route-based authentication flow for:
+
+- `/register`
+- `/login`
+- `/verifyEmail`
+- `/forgotPassword`
+- `/resetPassword`
+- `/dashboard` (protected)
 
 ## Environment variables
 
@@ -137,6 +154,10 @@ The React client includes a professional auth architecture that is easy to maint
 ## Development workflow
 
 A professional workflow for this monorepo includes:
+
+- Keep authentication pages, route guards, and Redux auth state in sync when making changes.
+- Verify protected routes still redirect unauthenticated users correctly.
+- Ensure email verification and password reset flows are wired to the expected frontend routes.
 
 1. Create a feature branch for each change.
 2. Keep changes scoped to the relevant module.
