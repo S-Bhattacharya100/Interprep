@@ -6,7 +6,7 @@ import { Provider } from "react-redux";
 import { store } from "./app/store.js";
 import AppRoutes from "./routes/AppRoutes.jsx";
 
-import './index.css'
+import './index.css';
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>

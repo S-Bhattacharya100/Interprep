@@ -124,7 +124,7 @@ const Register = () => {
 
             <p>
                 Already have an account?{" "}
-                <Link to={"/login"}>
+                <Link to="/login">
                     Login
                 </Link>
             </p>
