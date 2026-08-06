@@ -5,11 +5,11 @@ import Login from "../pages/Login";
 import Dashboard from "../pages/Dashboard";
 import VerifyEmail from "../pages/VerifyEmail";
 import ForgotPassword from "../pages/ForgotPassword";
-import RersetPassword from "../pages/ResetPassword";
+import ResetPassword from "../pages/ResetPassword";
 
 import ProtectedRoute from "../components/ProtectedRoute";
 
-const Approutes = () => {
+const AppRoutes = () => {
     return (
         <BrowserRouter>
             <Routes>
@@ -45,7 +45,7 @@ const Approutes = () => {
 
                 <Route
                     path="/resetPassword" 
-                    element={<RersetPassword />}
+                    element={<ResetPassword />}
                 />
 
                 {/* Protected route */}
@@ -64,4 +64,4 @@ const Approutes = () => {
     );
 };
 
-export default Approutes;
+export default AppRoutes;

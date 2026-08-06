@@ -1,7 +1,20 @@
+import { useDispatch } from "react-redux";
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../features/auth/authApi";
+
+import {
+    loginStart,
+    loginSuccess,
+    loginFailure,
+} from "../features/auth/authSlice";
 
 const Login = () => {
+
+    const dispatch = useDispatch();
+    const navigate = useNavigate();
+
     const [formData, setFormData] = useState({
         email: "",
         password: ""
@@ -17,9 +30,30 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
 
-        console.log(formData);
+        dispatch(loginStart());
 
-        // We'll connect this to the backend next.
+        try {
+            const response = await loginUser(formData);
+
+            const {
+                accessToken,
+                refreshToken,
+                user,
+            } = response.data;
+
+            dispatch(loginSuccess({
+                accessToken,
+                refreshToken,
+                user,
+            }));
+
+            navigate("/dashboard");
+
+        } catch (err) {
+            dispatch(loginFailure(
+                err.response?.data?.message || "Login failed"
+            ));
+        }
     };
 
     return (
