@@ -220,6 +220,26 @@ const logIn = asyncHandler ( async (req, res) => {
     });
 });
 
+// Get currently authenticated user
+const getCurrentUser = asyncHandler(async (req, res) => {
+
+    const user = await User.findById(req.user.id).select("-password");
+
+    if (!user) {
+        throw new ApiError(status.NOT_FOUND, "User not found");
+    }
+
+    return res.status(status.SUCCESS).json({
+        success: true,
+        user: {
+            id: user._id,
+            name: user.name,
+            email: user.email,
+            role: user.role
+        }
+    });
+});
+
 // Refresh token handler
 const refreshTokenHandler = asyncHandler ( async (req, res) => {
 
@@ -278,5 +298,6 @@ module.exports = {
     resetPassword,
     logIn,
     refreshTokenHandler,
-    logout
+    logout,
+    getCurrentUser
 };

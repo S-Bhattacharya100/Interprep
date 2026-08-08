@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const authController = require("../controllers/auth.controller");
 const validate = require("../middleware/validate.middleware");
+const authMiddleware = require("../middleware/auth.middleware");
 const {
     registerSchema,
     resendVerificationSchema,
@@ -21,5 +22,8 @@ router.post("/reset-password", authController.resetPassword);
 
 router.post("/refresh", validate(refreshTokenSchema), authController.refreshTokenHandler);
 router.post("/logout", validate(logoutSchema), authController.logout);
+
+// Protected route
+router.get("/me", authMiddleware, authController.getCurrentUser);
 
 module.exports = router;

@@ -1,13 +1,14 @@
 import { createSlice } from "@reduxjs/toolkit";
 import { refreshToken } from "./authApi";
 
-const accessToken = localStorage.getItem("accessToken");
+const storedAccessToken = localStorage.getItem("accessToken");
+const storedRefreshToken = localStorage.getItem("refreshToken");
 
 const initialState = {
     user: null,
-    accessToken: accessToken,
-    refreshToken: localStorage.getItem("refreshToken") || null,
-    isAuthenticated: !! accessToken,
+    accessToken: storedAccessToken,
+    refreshToken: storedRefreshToken,
+    isAuthenticated: !! storedAccessToken,
     loading: false,
     error: null
 }
