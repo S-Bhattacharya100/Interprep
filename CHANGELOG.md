@@ -3,8 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
-- Updated the README and project documentation to reflect the latest authentication system changes.
-- Documented the new frontend authentication pages: Register, Login, Verify Email, Forgot Password, Reset Password, and Dashboard.
-- Added documentation for the route configuration and protected-route guard used for authenticated access.
-- Clarified the frontend auth architecture around Axios, Redux Toolkit, auth API helpers, and auth state management.
+- Added styled `Login` page using Tailwind CSS V4 and updated client styles.
+- Installed and configured Tailwind CSS (client-side) and PostCSS integration.
+- Updated `AppRoutes.jsx` and `ProtectedRoute.jsx` for route configuration and auth guarding.
+- Updated `authSlice` to persist `user` and initialize `isAuthenticated` from localStorage tokens.
+- Backend: added `GET /api/auth/me` (current user provider) to expose the authenticated user profile.
+- Documentation and README updated to reflect the above changes.
 

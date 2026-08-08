@@ -51,6 +51,8 @@ cd ../runner
 npm install
 ```
 
+If you added new dev dependencies (Tailwind CSS, PostCSS, autoprefixer), run the `npm install` inside `client/` to ensure they are installed.
+
 ### Configure environment variables
 
 Create a `.env` file inside `server/` with the following content:
@@ -110,6 +112,8 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/routes/AppRoutes.jsx` — route configuration for public and protected pages
 - `client/src/components/ProtectedRoute.jsx` — guard that redirects unauthenticated users to login
 
+Note: Tailwind CSS is used for styling the Login page and other UI components. The client includes `tailwind.config.cjs` and `postcss.config.cjs` preconfigured; run `npm install` in `client/` to install the required packages.
+
 ## API overview
 
 ### Auth endpoints
@@ -138,6 +142,12 @@ The client now includes route-based authentication flow for:
 - `/forgotPassword`
 - `/resetPassword`
 - `/dashboard` (protected)
+
+### Current user endpoint
+
+The backend exposes an endpoint to return the current authenticated user profile:
+
+- `GET /api/auth/me` — returns user info for the access token presented in the request (attach `Authorization: Bearer <accessToken>`)
 
 ## Environment variables
 

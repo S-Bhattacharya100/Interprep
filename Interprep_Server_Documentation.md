@@ -1256,6 +1256,8 @@ router.post("/logout", validate(logoutSchema), authController.logout);
 router.get("/verify-email", authController.verifyEmail);
 router.post("/forgot-password", authController.forgotPassword);
 router.post("/reset-password", authController.resetPassword);
+// Returns the current authenticated user (requires Authorization header)
+router.get("/me", authController.getCurrentUser);
 
 module.exports = router;
 ```
@@ -1615,6 +1617,7 @@ app.listen(port, () => {
 | POST | /auth/reset-password | Reset password |
 | POST | /auth/refresh | Refresh access token |
 | POST | /auth/resend-verification | Resend verification email |
+| GET | /auth/me | Get current user information (requires Authorization header) |
 
 ## Problem Endpoints
 
