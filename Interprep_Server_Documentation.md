@@ -22,7 +22,7 @@ The repository has evolved into a monorepo that now includes three main services
 ### 0.2 Frontend Authentication Layer
 The frontend now includes a modern auth setup built with Redux Toolkit and Axios:
 
-- `client/src/utils/axiosInstance.js` – shared Axios instance that attaches the JWT token to requests
+- `client/src/utils/axiosInstance.js` – shared Axios instance with request/response interceptors for JWT token attachment, automatic token refresh, and centralized error handling
 - `client/src/app/store.js` – Redux store configuration
 - `client/src/features/auth/authAPI.js` – API helpers for register, login, verification, reset, refresh, and logout
 - `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state and persistence
@@ -38,13 +38,19 @@ This documentation continues to focus primarily on the backend and code executio
 
 ---
 
-### 0.3 Recent Authentication Changes
-The latest frontend changes introduce a more complete authentication experience:
+### 0.3 Recent Frontend Updates
+The latest frontend changes introduce a more complete authentication experience with improved tooling:
 
+**Build & Styling:**
+- Fixed `vite.config.js` to use the `@tailwindcss/vite` plugin for seamless Tailwind CSS v4 integration with hot-reload support
+- Configured PostCSS with Autoprefixer for cross-browser CSS compatibility
+
+**Authentication:**
 - Public routes for registration, login, email verification, forgot password, and reset password
 - A protected dashboard route that requires a valid access token
 - A reusable protected-route component to enforce frontend access control
 - Routing setup that redirects users to the login page when they are not authenticated
+- Axios instance with interceptors that handle JWT tokens, token refresh, and error responses automatically
 
 # TABLE OF CONTENTS
 

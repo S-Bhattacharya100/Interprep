@@ -51,7 +51,7 @@ cd ../runner
 npm install
 ```
 
-If you added new dev dependencies (Tailwind CSS, PostCSS, autoprefixer), run the `npm install` inside `client/` to ensure they are installed.
+If you added new dev dependencies (Tailwind CSS, PostCSS, autoprefixer, @tailwindcss/vite), run the `npm install` inside `client/` to ensure they are installed.
 
 ### Configure environment variables
 
@@ -100,7 +100,7 @@ Default ports in development:
 
 The React client includes a professional auth architecture that is easy to maintain and extend:
 
-- `client/src/utils/axiosInstance.js` — shared Axios instance with request configuration and JWT handling
+- `client/src/utils/axiosInstance.js` — shared Axios instance with request and response interceptors for JWT token handling, error management, and automatic token refresh
 - `client/src/app/store.js` — Redux store setup and slice registration
 - `client/src/features/auth/authAPI.js` — reusable auth API helpers for register, login, refresh, logout, and password actions
 - `client/src/features/auth/authSlice.js` — auth slice for Redux state and actions
@@ -112,7 +112,7 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/routes/AppRoutes.jsx` — route configuration for public and protected pages
 - `client/src/components/ProtectedRoute.jsx` — guard that redirects unauthenticated users to login
 
-Note: Tailwind CSS is used for styling the Login page and other UI components. The client includes `tailwind.config.cjs` and `postcss.config.cjs` preconfigured; run `npm install` in `client/` to install the required packages.
+Note: Tailwind CSS v4 is used for styling the Login page and other UI components. The client includes `tailwind.config.cjs`, `postcss.config.cjs`, and Vite integration via `@tailwindcss/vite` plugin in `vite.config.js` for optimized development experience; run `npm install` in `client/` to install the required packages.
 
 ## API overview
 
