@@ -1,12 +1,10 @@
 import { createSlice } from "@reduxjs/toolkit";
-import { refreshToken } from "./authApi";
 
 const storedAccessToken = localStorage.getItem("accessToken");
 const storedRefreshToken = localStorage.getItem("refreshToken");
-const storedUser = localStorage.getItem("user");
 
 const initialState = {
-    user: storedUser ? JSON.parse(storedUser) : null,
+    user: null,
     accessToken: storedAccessToken,
     refreshToken: storedRefreshToken,
     isAuthenticated: !!storedAccessToken,
@@ -30,13 +28,9 @@ const authSlice = createSlice({
             state.accessToken = action.payload.accessToken;
             state.refreshToken = action.payload.refreshToken;
             state.isAuthenticated = true;
+
             localStorage.setItem("accessToken", action.payload.accessToken);
             localStorage.setItem("refreshToken", action.payload.refreshToken);
-            try {
-                localStorage.setItem("user", JSON.stringify(action.payload.user));
-            } catch (e) {
-                // ignore storage errors
-            }
         },
 
         loginFailure: (state, action) => {
@@ -51,10 +45,13 @@ const authSlice = createSlice({
             state.isAuthenticated = false;
             localStorage.removeItem("accessToken");
             localStorage.removeItem("refreshToken");
-            localStorage.removeItem("user");
+        },
+
+        setUser: (state, action) => {
+            state.user = action.payload;
         }
     }
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, setUser } = authSlice.actions;
 export default authSlice.reducer;
