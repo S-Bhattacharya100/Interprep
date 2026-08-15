@@ -1,28 +1,12 @@
-import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setUser, logout } from "../features/auth/authSlice";
-import { getCurrentUser } from "../features/auth/authApi";
+import { logout } from "../features/auth/authSlice";
 
 const Dashboard = () => {
     const dispatch = useDispatch();
     const navigate = useNavigate();
 
     const { user } = useSelector((state) => state.auth);
-
-    useEffect(() => {
-        const loadCurrentUser = async () => {
-            try {
-                const response = await getCurrentUser();
-                dispatch(setUser(response.data.user));
-            } catch (error) {
-                return error.response?.data || error.message;
-            }
-        }
-
-        loadCurrentUser();
-
-    }, [dispatch]);
 
     const handleLogout = () => {
         dispatch(logout());
