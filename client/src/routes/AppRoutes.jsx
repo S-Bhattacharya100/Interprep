@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from  "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 
 import Register from "../pages/Register";
 import Login from "../pages/Login";
@@ -7,60 +7,69 @@ import VerifyEmail from "../pages/VerifyEmail";
 import ForgotPassword from "../pages/ForgotPassword";
 import ResetPassword from "../pages/ResetPassword";
 
+import PublicRoute from "../components/PublicRoute";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 const AppRoutes = () => {
     return (
-        <BrowserRouter>
-            <Routes>
-                
-                {/* Redirect root to login */}
 
-                <Route
-                    path="/" 
-                    element={<Navigate to= "/login" replace />}
-                />
+        <Routes>
 
-                {/* Authentication */}
+            {/* Redirect root to login */}
 
-                <Route
-                    path="/register" 
-                    element={<Register />}
-                />
+            <Route
+                path="/"
+                element={<Navigate to="/login" replace />}
+            />
 
-                <Route
-                    path="/login" 
-                    element={<Login />}
-                />
+            {/* Authentication */}
 
-                <Route
-                    path="/verifyEmail" 
-                    element={<VerifyEmail />}
-                />
+            <Route
+                path="/register"
+                element={
+                    <PublicRoute>
+                        <Register />
+                    </PublicRoute>
+                }
+            />
 
-                <Route
-                    path="/forgotPassword" 
-                    element={<ForgotPassword />}
-                />
+            <Route
+                path="/login"
+                element={
+                    <PublicRoute>
+                        <Login />
+                    </PublicRoute>
+                }
+            />
 
-                <Route
-                    path="/resetPassword" 
-                    element={<ResetPassword />}
-                />
+            <Route
+                path="/verifyEmail"
+                element={<VerifyEmail />}
+            />
 
-                {/* Protected route */}
+            <Route
+                path="/forgotPassword"
+                element={<ForgotPassword />}
+            />
 
-                <Route
-                    path="/dashboard" 
-                    element={
-                        <ProtectedRoute>
-                            <Dashboard />
-                        </ProtectedRoute>
-                    }
-                />
+            <Route
+                path="/resetPassword"
+                element={<ResetPassword />}
+            />
 
-            </Routes>
-        </BrowserRouter>
+            {/* Protected route */}
+
+            <Route
+                path="/dashboard"
+                element={
+                    <ProtectedRoute>
+                        <Dashboard />
+                    </ProtectedRoute>
+                }
+            />
+
+        </Routes>
+
     );
 };
 

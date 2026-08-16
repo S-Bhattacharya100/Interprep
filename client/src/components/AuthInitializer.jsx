@@ -1,9 +1,9 @@
-import { Children, useEffect } from "react";
+import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { getCurrentUser } from "../features/auth/authAPI";
 import { setUser, logout } from "../features/auth/authSlice";
 
-const AuthInitializer = ({Children}) => {
+const AuthInitializer = ({ children }) => {
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -34,7 +34,7 @@ const AuthInitializer = ({Children}) => {
 
     }, [dispatch]);
 
-    return Children;
+    return children;
 }
 
 export default AuthInitializer;

@@ -50,9 +50,9 @@ const Login = () => {
             navigate("/dashboard");
 
         } catch (err) {
-            dispatch(loginFailure(
-                err.response?.data?.message || "Login failed"
-            ));
+            dispatch(loginFailure({
+                error: err.response?.data?.message || "Login failed"
+            }));
         }
     };
 
