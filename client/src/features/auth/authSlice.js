@@ -8,6 +8,7 @@ const initialState = {
     accessToken: storedAccessToken,
     refreshToken: storedRefreshToken,
     isAuthenticated: !!storedAccessToken,
+    authInitialized: false,
     loading: false,
     error: null
 }
@@ -49,9 +50,13 @@ const authSlice = createSlice({
 
         setUser: (state, action) => {
             state.user = action.payload;
+        },
+
+        authInitialized: (state, action) => {
+            state.authInitialized = true;
         }
     }
 });
 
-export const { loginStart, loginSuccess, loginFailure, logout, setUser } = authSlice.actions;
+export const { loginStart, loginSuccess, loginFailure, logout, setUser, authInitialized } = authSlice.actions;
 export default authSlice.reducer;

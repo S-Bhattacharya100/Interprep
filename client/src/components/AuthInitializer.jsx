@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { useDispatch } from "react-redux";
 import { getCurrentUser } from "../features/auth/authAPI";
-import { setUser, logout } from "../features/auth/authSlice";
+import { setUser, logout, authInitialized } from "../features/auth/authSlice";
 
 const AuthInitializer = ({ children }) => {
     const dispatch = useDispatch();
@@ -27,6 +27,8 @@ const AuthInitializer = ({ children }) => {
                 );
 
                 localStorage.removeItem("accessToken");
+            } finally {
+                dispatch(authInitialized());
             }
         }
 
