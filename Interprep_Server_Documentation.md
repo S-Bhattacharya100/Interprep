@@ -25,14 +25,16 @@ The frontend now includes a modern auth setup built with Redux Toolkit and Axios
 - `client/src/utils/axiosInstance.js` – shared Axios instance with request/response interceptors for JWT token attachment, automatic token refresh, and centralized error handling
 - `client/src/app/store.js` – Redux store configuration
 - `client/src/features/auth/authAPI.js` – API helpers for register, login, verification, reset, refresh, and logout
-- `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state and persistence
+- `client/src/features/auth/authSlice.js` – Redux slice for tracking auth state, including `user`, `isAuthenticated`, and `authInitialized`; the current user lives in Redux instead of localStorage
+- `client/src/components/AuthInitializer.jsx` – app bootstrap that reads the stored access token, calls `GET /api/auth/me`, stores the returned user, and marks auth initialization complete
 - `client/src/pages/Register.jsx` – registration page with validation and feedback messaging
-- `client/src/pages/Login.jsx` – login page for returning users
+- `client/src/pages/Login.jsx` – login page for returning users, with improved API error handling
 - `client/src/pages/VerifyEmail.jsx` – email verification flow
 - `client/src/pages/ForgotPassword.jsx` – password recovery entry point
 - `client/src/pages/ResetPassword.jsx` – password reset form
 - `client/src/routes/AppRoutes.jsx` – route configuration for public and protected pages
-- `client/src/components/ProtectedRoute.jsx` – route guard that redirects unauthenticated users to login
+- `client/src/components/ProtectedRoute.jsx` – waits for auth initialization and redirects unauthenticated users to `/login`
+- `client/src/components/PublicRoute.jsx` – prevents authenticated users from going back to login/register pages unnecessarily
 
 This documentation continues to focus primarily on the backend and code execution services, while the frontend modules above are now part of the overall platform architecture.
 
@@ -48,9 +50,12 @@ The latest frontend changes introduce a more complete authentication experience 
 **Authentication:**
 - Public routes for registration, login, email verification, forgot password, and reset password
 - A protected dashboard route that requires a valid access token
-- A reusable protected-route component to enforce frontend access control
-- Routing setup that redirects users to the login page when they are not authenticated
-- Axios instance with interceptors that handle JWT tokens, token refresh, and error responses automatically
+- A reusable `ProtectedRoute` to enforce frontend access control after the app has verified auth state
+- A reusable `PublicRoute` that prevents authenticated users from revisiting login or registration pages
+- A centralized `AuthInitializer` that loads the current user once at app startup and sets `authInitialized`
+- Redux auth state now includes `authInitialized` and keeps the active user in memory instead of persisting it in localStorage
+- Dashboard logic no longer calls the current-user endpoint directly; initialization is handled upstream by the app bootstrap
+- Axios and login flow improvements for cleaner error handling during failed authentication attempts
 
 # TABLE OF CONTENTS
 

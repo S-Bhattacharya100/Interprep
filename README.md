@@ -103,14 +103,18 @@ The React client includes a professional auth architecture that is easy to maint
 - `client/src/utils/axiosInstance.js` — shared Axios instance with request and response interceptors for JWT token handling, error management, and automatic token refresh
 - `client/src/app/store.js` — Redux store setup and slice registration
 - `client/src/features/auth/authAPI.js` — reusable auth API helpers for register, login, refresh, logout, and password actions
-- `client/src/features/auth/authSlice.js` — auth slice for Redux state and actions
+- `client/src/features/auth/authSlice.js` — Redux auth slice with `user`, `isAuthenticated`, and `authInitialized` state; the current user is kept in Redux rather than localStorage
+- `client/src/components/AuthInitializer.jsx` — app-level bootstrap that reads the stored access token, calls `GET /api/auth/me`, sets the current user, and marks auth as initialized
 - `client/src/pages/Register.jsx` — registration page with validation and user feedback
-- `client/src/pages/Login.jsx` — login experience for returning users
+- `client/src/pages/Login.jsx` — login experience for returning users, with improved error handling for failed auth attempts
 - `client/src/pages/VerifyEmail.jsx` — email verification flow
 - `client/src/pages/ForgotPassword.jsx` — password recovery entry point
 - `client/src/pages/ResetPassword.jsx` — password reset form
 - `client/src/routes/AppRoutes.jsx` — route configuration for public and protected pages
-- `client/src/components/ProtectedRoute.jsx` — guard that redirects unauthenticated users to login
+- `client/src/components/ProtectedRoute.jsx` — waits until auth initialization completes, then redirects unauthenticated users to `/login`
+- `client/src/components/PublicRoute.jsx` — prevents already-authenticated users from unnecessarily visiting public auth pages like `/login`
+
+The dashboard no longer fetches the current user directly on mount. Instead, the initializer fetches the session data once on app startup, and the rest of the app reads the authenticated user from Redux state.
 
 Note: Tailwind CSS v4 is used for styling the Login page and other UI components. The client includes `tailwind.config.cjs`, `postcss.config.cjs`, and Vite integration via `@tailwindcss/vite` plugin in `vite.config.js` for optimized development experience; run `npm install` in `client/` to install the required packages.
 
@@ -136,12 +140,14 @@ Note: Tailwind CSS v4 is used for styling the Login page and other UI components
 
 The client now includes route-based authentication flow for:
 
-- `/register`
-- `/login`
-- `/verifyEmail`
-- `/forgotPassword`
-- `/resetPassword`
-- `/dashboard` (protected)
+- `/register` — guest-only route
+- `/login` — guest-only route; redirects authenticated users to `/dashboard`
+- `/verifyEmail` — email verification page
+- `/forgotPassword` — password recovery page
+- `/resetPassword` — password reset page
+- `/dashboard` — protected route that requires a valid auth session
+
+The app bootstraps auth by wrapping the router with `AuthInitializer`, so route guards are only evaluated after the current-user check completes.
 
 ### Current user endpoint
 
@@ -166,7 +172,8 @@ The backend exposes an endpoint to return the current authenticated user profile
 A professional workflow for this monorepo includes:
 
 - Keep authentication pages, route guards, and Redux auth state in sync when making changes.
-- Verify protected routes still redirect unauthenticated users correctly.
+- Verify protected routes still redirect unauthenticated users correctly after the `AuthInitializer` completes.
+- Ensure public routes block already-authenticated users and redirect them to the dashboard.
 - Ensure email verification and password reset flows are wired to the expected frontend routes.
 
 1. Create a feature branch for each change.
